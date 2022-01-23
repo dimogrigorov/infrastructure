@@ -1,0 +1,16 @@
+## Generating current subnet state inventory 
+- hosts: localhostInternalSubnet
+  tasks:
+    - name: include vault variables(proxmox cluster password)
+      include_vars: '../vars/vault.yml'
+      no_log: true
+    - name: Delete previous subnet state inventory if existing
+      file:
+        path: "{{ inventory_dir }}/generatedHostsFile"
+        state: absent
+    - name: Generating subnet state inventory
+      script: generate_subnet_manage_inventory.sh -s {{ api_host }} -u root@pam -p {{ proxmox_password }} -f {{ fromVmid }} -t {{ toVmid }} -d {{ inventory_dir }}
+    - name: Delete leftover files
+      file:
+        path: /tmp/proxvm-*.json
+        state: absent

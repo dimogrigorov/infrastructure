@@ -1,0 +1,142 @@
+# TBD: Explain all Variables and groups, remove mentions of proxmox,
+# doublecheck reuse of variables
+# and usage of user/pw (should be coming from the vault).
+#
+[all:vars]
+proxmox_password={{ vault_proxmox_password }}
+force_variable_check=False
+
+#---------------------------------------------------------------------------------------------
+## Common Parent/Wrapping Group which provides global variables throughout all the hosts in
+## the inventory
+#---------------------------------------------------------------------------------------------
+
+[ExtendedVariablesGroup:children]
+LocalhostGroup                  #
+ProxmoxNodeGroup                # Proxmox-Node Settings
+Localhost-InternalSubnetGroup   # used by Internal Subnet Jenkins
+ProxmoxNode-InternalSubnetGroup # used by Internal Subnet Jenkins
+#CurrentSubnetHosts
+
+[ExtendedVariablesGroup:vars]
+fromVmid={{ from_vmid }}
+toVmid={{ to_vmid }}
+internal_subnetmask={{ subnetmask }}
+proxmox_node_name={{ node_name }}
+force_stop=False
+
+#---------------------------------------------------------------------------------------------
+## All hosts in these sub-groups are using a connection via localhost with different variables
+## (due to the use of the paramiko/netconf connection used in the ANSIBLE-HPE-CW7 library)
+#---------------------------------------------------------------------------------------------
+
+[LocalhostGroup:vars]
+ansible_connection=local
+api_host={{ proxmox_node_external_ip }}
+
+[LocalhostGroup:children]
+UserVMsGroup
+AdminVMsGroup
+CurrentSubnetHosts
+
+[LocalhostGroup]
+localhost
+
+#-----
+
+[Subnet]
+[Subnet:vars]
+storage={{ hdd_storage }}
+vm_bridge={{ bridge }}
+
+[Subnet:children]
+UserVMsGroup
+AdminVMsGroup
+LocalhostTemplatesGroup
+ProxmoxTemplatesGroup
+InternalUserVMsGroup
+
+[InternalUserVMsGroup]
+[UserVMsGroup]
+[UserVMsGroup:vars]
+full_clone=no
+
+[AdminVMsGroup]
+[AdminVMsGroup:vars]
+full_clone=no
+
+[LocalhostTemplatesGroup]
+[LocalhostTemplatesGroup:vars]
+api_host={{ proxmox_node_external_ip }}
+full_clone=yes
+keepTemplateAfterVMIsCreated=true
+[LocalhostTemplatesGroup:children]
+SubnetTemplatesGroup
+
+#---------------------------------------------------------------------------------------------
+## All hosts in these sub-groups are using a direct connection to the proxmox node
+#---------------------------------------------------------------------------------------------
+
+[ProxmoxNodeGroup:vars]
+ansible_host={{ proxmox_node_external_ip }}
+ansible_user=root
+
+[ProxmoxNodeGroup:children]
+ProxmoxPrivilegesGroup
+ProxmoxTemplatesGroup
+
+[ProxmoxNodeGroup]
+proxmoxNode
+
+[ProxmoxPrivilegesGroup]
+proxmoxNodePrivilegesExternal
+[PrivilegesGroup:children]
+ProxmoxPrivilegesGroup
+ProxmoxPrivilegesGroupInternal
+
+#---------------------------------------------------------------------------------------------
+## Hosts used by the Ansible/Jenkins subnet management machine
+#---------------------------------------------------------------------------------------------
+
+[Localhost-InternalSubnetGroup:vars]
+api_host={{ proxmox_node_internal_ip }}
+ansible_connection=local
+
+[Localhost-InternalSubnetGroup:children]
+CurrentSubnetHostsLocalhost
+InternalUserVMsGroup
+
+[Localhost-InternalSubnetGroup]
+localhostInternalSubnet
+
+#----------------------------------------------------------------------------------------
+
+[ProxmoxNode-InternalSubnetGroup:vars]
+ansible_host={{ proxmox_node_internal_ip }}
+ansible_user=root
+
+[ProxmoxNode-InternalSubnetGroup:children]
+ProxmoxInternalRouter
+ProxmoxPrivilegesGroupInternal
+
+[ProxmoxPrivilegesGroupInternal]
+[ProxmoxPrivilegesGroupInternal]
+proxmoxNodePrivilegesInternal
+
+[PerimeterRouterGroup]
+[PerimeterRouterGroup:children]
+ProxmoxInternalRouter
+PerimerRouterLocal
+
+[PerimerRouterLocal]
+[ProxmoxInternalRouter]
+proxmoxNodeInternalRouter
+
+#----------------------------------------------------------------------------------------
+
+[CurrentSubnetHosts]
+[CurrentSubnetHostsLocalhost]
+[SubnetTemplatesGroup]
+[ProxmoxTemplatesGroup]
+[ProxmoxTemplatesGroup:children]
+SubnetTemplatesGroup                                                                                                                                                                   

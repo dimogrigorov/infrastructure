@@ -1,0 +1,19 @@
+sysname: ***
+initial_ip_address: 10.69.181.31
+external_ip_address: ***
+external_subnetmask: 255.255.252.0
+default_gateway: 10.69.180.1
+internal_ip_address: ***
+dhcp_pool_name: ***
+dhcp_network: ***
+dns_by_dhcp: 10.69.177.253
+username: hp 
+password: hp123
+force_stop: True
+
+#EXAMPLE
+#sysname: TestnetRouter
+#external_ip_address: 10.69.181.7
+#internal_ip_address: 10.69.181.33
+#dhcp_pool_name: TestnetPool
+#dhcp_network: 10.69.181.32

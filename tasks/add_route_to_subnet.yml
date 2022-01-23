@@ -1,0 +1,7 @@
+- name: Convert calculates number of bit in a netmask
+  script: netmask_conversion.sh {{ subnetmask }}
+  register: numbits
+- name: Adding the route to the subnet..
+  command:
+    ip route add {{ dhcp_network }}/{{ numbits.stdout }} via {{ external_ip_address }}
+  failed_when: false

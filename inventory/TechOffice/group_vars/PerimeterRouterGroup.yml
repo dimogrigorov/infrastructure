@@ -1,0 +1,12 @@
+sysname: TechOfficeRouter
+initial_ip_address: 10.69.181.31
+external_ip_address: 10.69.181.13
+external_subnetmask: 255.255.252.0
+default_gateway: 10.69.180.1
+internal_ip_address: 10.69.182.65
+dhcp_pool_name: TechOfficePool
+dhcp_network: 10.69.182.64
+dns_by_dhcp: 10.69.177.253
+username: hp 
+password: hp123
+force_stop: True

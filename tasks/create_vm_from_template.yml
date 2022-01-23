@@ -1,0 +1,25 @@
+- hosts: "{{ host }}"
+  tasks:
+    - name: include vault variables(proxmox cluster password)
+      include_vars: '../vars/vault.yml'
+      no_log: true
+    - name: Cloning a VM with Vm-id "{{ vmid }}" from a Proxmox VM template with VM-id "{{ template_vmid }}" on "{{ storage }}" storage "{{ api_host }}" host..
+      proxmox_kvm:
+        api_user    : root@pam
+        api_password: "{{ proxmox_password }}"
+        api_host    : "{{ api_host }}"
+        clone       : "yes"
+        newid       : "{{ vmid }}"
+        vmid        : "{{ template_vmid }}"
+        name        : "{{ new_machine_name }}"
+        node        : "{{ proxmox_node_name }}" 
+        full        : "{{ full_clone }}"
+        timeout     : "1190"
+        skiplock    : 
+      retries: 4
+      delay: 15
+      # ignore_errors: yes
+      when: ( force_variable_check == false or ( vmid | int <= toVmid | int and fromVmid | int - 1 <= vmid | int ))
+    - name: Waiting a bit for the Hypervisor to catch up..
+      pause:
+        seconds: 10

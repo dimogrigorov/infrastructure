@@ -1,0 +1,104 @@
+- hosts: proxmoxNodePrivileges{{ visibilityToSubnet }}
+  tasks:
+    - name: include variables
+      include_vars: '{{ inventory_dir }}/enforce_value_vars.yml'
+      no_log: true
+    - name: Checking if user "{{ userId }}" exists in Proxmox..
+      shell: "pvesh get /access/users/{{ userId }}@pve"
+      no_log: True
+      register: outputGetUser
+      failed_when: false
+    - name: Creating user "{{ userId }}" in "@pve" realm..
+      shell: pvesh create /access/users -userid {{ userId }}@pve
+      when: outputGetUser.rc != 0
+    - name: Setting the password for the newly created user "{{ userId }}"..
+      shell: pvesh set /access/password --userid {{ userId }}@pve --password {{ password }}
+      when: outputGetUser.rc != 0
+    - name: Checking if "{{ roleId }}" Proxmox-role already exists..
+      shell: pvesh get /access/roles/{{ roleId }}
+      no_log: True
+      register: outputGetRole
+      failed_when: false
+    - name: Creating "{{ roleId }}" from scratch and setting "{{ privilegesList }}" privileges for that role..
+      shell: pveum roleadd {{ roleId }} -privs "{{ privilegesList }}"
+      when: (roleWillBeCreated == true and outputGetRole.rc != 0)
+    - name: Updating privileges for "{{ roleId }}" role..
+      shell: |
+        pveum roledel {{ roleId }}
+        pveum roleadd {{ roleId }} -privs "{{ privilegesList }}"
+      when: (roleWillBeCreated == true and outputGetRole.rc == 0)
+    - name: Checking if group "{{ groupId }}" already exists in Proxmox..
+      shell: pvesh get /access/groups/{{ groupId }}
+      no_log: True
+      register: outputGetGroup
+      failed_when: false
+    - name: Createing group "{{ groupId }}" - (optional)
+      shell: pveum groupadd {{ groupId }} -comment "Subnet group created"
+      when: (groupWillBeCreated == true and outputGetGroup.rc != 0)     
+    - name: Adding the newly created user "{{ userId }}" to the group "{{ groupId }}" ..
+      shell: pveum usermod {{ userId  }}@pve -group {{ groupId }}
+      when: groupWillBeCreated == true    
+    - name: Creating/generating shell script file to change in loop permissions for user "{{ userId }}"   
+      copy:
+        content: |
+          #!/bin/sh
+          vmid={{ fromVmid }}; 
+          while [ $vmid -le {{ toVmid }} ];
+          do 
+            pveum aclmod /vms/$vmid -user {{ userId }}@pve -role {{ roleId }}
+            vmid=$((vmid+1)); 
+          done
+        dest: /tmp/vmidRangeShell.sh
+        force: yes
+        mode: 0700
+      when: (groupWillBeCreated == false and vmidRangeWillBeUsed == true and fromVmid <= toVmid)
+      tags:
+        - privileges
+    - name: Granting \'object and paths\' permission for our new subnet user "{{ userId }}" for VMId range[ "{{ fromVmid }}" - "{{ toVmid }}" ]. A shell script is executed
+      command: /tmp/vmidRangeShell.sh
+      when: (groupWillBeCreated == false and vmidRangeWillBeUsed == true and fromVmid <= toVmid)
+      tags:
+        - privileges
+    - name: Granting \'object and paths\' permission for our new subnet user "{{ userId }}" from VMId list "{{ vmidList }}" given
+      shell:
+        pveum aclmod /vms/{{ item }} -user {{ userId }}@pve -role {{ roleId }}
+      when: (groupWillBeCreated == false and vmidListWillBeUsed == true)
+      with_items: "{{ vmidList }}"
+      tags:
+        - privileges
+    - name: Limiting the "{{ storage }}" storage access for our new user "{{ userId }}"
+      shell:
+        pveum aclmod /storage/{{ storage }} -user {{ userId }}@pve -role {{ roleId }}
+      when: groupWillBeCreated == false
+    - name: Creating shell script file to change in loop permissions for group "{{ groupId }}" 
+      copy:
+        content: |
+          #!/bin/sh
+          vmid={{ fromVmid }};
+          while [ $vmid -le {{ toVmid }} ];
+          do
+            pveum aclmod /vms/$vmid -group {{ groupId }} -role {{ roleId }}
+            vmid=$((vmid+1));
+          done
+        dest: /tmp/vmidRangeShell.sh
+        force: yes
+        mode: 0700
+      when: (groupWillBeCreated == true and vmidRangeWillBeUsed == true and fromVmid <= toVmid)
+      tags:
+        - privileges
+    - name: Granting \'object and paths\' permission for our new subnet group "{{ groupId }}" from VMId range "{{ fromVmid }}" - "{{ toVmid }}". A shell script is executed
+      command: /tmp/vmidRangeShell.sh
+      when: (groupWillBeCreated == true and vmidRangeWillBeUsed == true and fromVmid <= toVmid)
+      tags:
+        - privileges
+    - name: Granting \'object and paths\' permission for our new subnet group "{{ groupid }}" from VMId list "{{ vmidList }}" given
+      shell:
+        pveum aclmod /vms/{{ item }} -group {{ groupId }} -role {{ roleId }}
+      when: (groupWillBeCreated == true and vmidListWillBeUsed == true)
+      with_items: "{{ vmidList }}"
+      tags:
+        - privileges
+    - name: Limitting the "{{ storage }}" storage access for our new group "{{ groupId }}"
+      shell:
+        pveum aclmod /storage/{{ storage }} -group {{ groupId }} -role {{ roleId }}
+      when: groupWillBeCreated == true

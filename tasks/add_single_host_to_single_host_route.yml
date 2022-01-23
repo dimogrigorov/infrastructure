@@ -1,0 +1,4 @@
+- name: Add single host to single host route
+  command:
+    ip route add {{ from_host }} via {{ via_hop_host }} 
+  failed_when: false

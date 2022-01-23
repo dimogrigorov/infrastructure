@@ -1,0 +1,23 @@
+- hosts: "{{ host }}"
+  tasks:
+  - name: include vault variables(proxmox cluster password)
+    include_vars: '../vars/vault.yml'
+    no_log: true
+  - name: Change subnet VM/group of VMs state
+    proxmox_kvm:
+      api_user    : root@pam
+      api_password: "{{ proxmox_password }}"
+      api_host    : "{{ api_host }}"
+      node        : "{{ proxmox_node_name }}"
+      vmid        : "{{ vmid }}"
+      state       : "{{ state }}"
+      timeout     : 1290
+      skiplock    :
+      force       : "{{ force_stop }}"
+    retries: 4
+    delay: 15
+    #ignore_errors: yes
+    when: ( force_variable_check == false or ( vmid | int <= toVmid | int and fromVmid | int - 1 <= vmid | int ))
+  - name: Waiting a bit for the Hypervisor to catch up..
+    pause:
+      seconds: 10

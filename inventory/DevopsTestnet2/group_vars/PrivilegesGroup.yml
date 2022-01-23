@@ -1,0 +1,8 @@
+groupId: Test-Users
+roleId: Administrator
+storageList: [QNAP-Storage, HDD-Storage]
+vmidList: [1009, 14000, 10002, 10005]
+privilegesList: ""
+vmidRangeWillBeUsed: True
+groupWillBeCreated: False
+roleWillBeCreated: False

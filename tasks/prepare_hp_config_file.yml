@@ -1,0 +1,4 @@
+- name: Creating perimeter router configuration file from J2 configuration template 
+  template: 
+    src=template.cfg.j2 
+    dest="./files/template.cfg"

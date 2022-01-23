@@ -1,0 +1,11 @@
+- name: Waiting for up to 900 seconds for port 22 on {{ ip_address }} to become available..
+  wait_for:
+    port: "{{ port_to_wait_for }}"
+    host: "{{ ip_address }}"
+    #delay: 10
+    timeout: 900
+  no_log: True
+  failed_when: false
+- name: Waiting a bit for the Hypervisor to catch up..
+  pause:
+    seconds: 20
