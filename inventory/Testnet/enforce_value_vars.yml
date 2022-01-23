@@ -1,0 +1,7 @@
+proxmox_node_external_ip: 10.5.200.64
+proxmox_node_internal_ip: 10.5.200.64
+from_vmid: 6001
+to_vmid: 6011
+subnetmask: 255.255.255.240
+node_name: alchemy4
+bridge: vmbr13

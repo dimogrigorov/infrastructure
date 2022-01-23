@@ -1,0 +1,7 @@
+- name: Adding ansible host dynamically to inventory..
+  add_host:
+    name: "{{ name_set }}"
+    ansible_user: "{{ ansible_user_set }}"
+    ansible_host: "{{ ansible_host_set }}"
+    inventory_dir: "{{ inventory_dir }}"
+    groups: "{{ groups_list }}"

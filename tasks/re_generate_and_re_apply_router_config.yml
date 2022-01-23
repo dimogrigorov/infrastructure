@@ -1,0 +1,16 @@
+## 1. Generate cfg file for the perimeter router
+- hosts: perRouter
+  tasks:
+    - name: Generate cfg file for the perimeter router
+      import_tasks: prepare_hp_config_file.yml
+
+## 2. Generate static ip-mac entries in the perimeter DHCP router
+- import_playbook: generate_dhcp_entries.yml host=localhostInternalSubnet is_this_jenkins_machine=true
+
+## 3. Applying the generated configuration to perimeter router
+- hosts: perRouter
+  tasks:
+    - name:
+      import_tasks: hp_install_config.yml
+      vars:
+        ip_address: "{{ hostvars['perRouter']['internal_ip_address'] }}"

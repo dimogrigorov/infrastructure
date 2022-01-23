@@ -1,0 +1,119 @@
+---
+## 1. Create User/Group/Role and assign privileges
+- import_playbook: create_subnet_user_and_set_privileges.yml visibilityToSubnet=External
+
+## 2. Cloning admin-subnet VMs that will be converted to subnet-templates
+- import_playbook: create_vm_from_template.yml host=LocalhostTemplatesGroup ansible_connection=local 
+
+## 3. Creating the necessary subnet templates 
+- hosts: "ProxmoxTemplatesGroup"
+  tasks:
+    - name: Creating the necessary subnet templates
+      import_tasks: create_subnet_templates.yml
+
+## 4. Create subnet Admin VMs from the templates created in previos step
+- import_playbook: create_vm_from_template.yml host=AdminVMsGroup
+
+## 5. Creating user defined machines from the provided inventory
+- import_playbook: create_vm_from_template.yml host=UserVMsGroup
+
+## 6. Generate cfg file for the perimeter router
+- hosts: perRouter
+  tasks:
+    - name: Generate cfg file for the perimeter router
+      import_tasks: prepare_hp_config_file.yml
+
+## 7. Generate static ip-mac entries in the perimeter DHCP router
+- import_playbook: generate_dhcp_entries.yml host=localhost is_this_jenkins_machine=false
+
+## 8. Starting Perimeter Router
+- import_playbook: put_vm_in_state.yml host=perRouter state=started
+
+## 9. Waiting for Perimeter-router to become available
+- hosts: perRouter
+  tasks:
+    - name: Waiting for Perimeter-router to become available..
+      import_tasks: wait_for_machine_port_to_become_available.yml 
+      vars: 
+        port_to_wait_for: 22
+        ip_address: "{{ hostvars['perRouter']['initial_ip_address'] }}"
+
+## 10. Applying the generated configuration to perimeter router
+- hosts: perRouter
+  tasks:
+    - name: 
+      import_tasks: hp_install_config.yml
+      vars:
+        ip_address: "{{ hostvars['perRouter']['initial_ip_address'] }}"
+
+        
+
+
+# ---------------------------------------------------------------------------
+
+
+
+
+## 11. Starting Jenkins machine
+- import_playbook: put_vm_in_state.yml host=ansibleJenkinsVM state=started
+
+## 12. Add route on the local management ansible machine to the Jenkins-Management machine in the subnet
+- hosts: perRouter
+  tasks:
+    - name: Adding route to the jenkins subnet machine..
+      import_tasks: add_route_to_subnet.yml
+
+## 13. Waiting for Jenkins machine to become available
+- hosts: ansibleJenkinsVM 
+  tasks:
+    - name: Waiting for Jenkin machine state(maybe 'current' ) to change ...
+      import_tasks: wait_for_machine_port_to_become_available.yml 
+      vars:
+        port_to_wait_for: 22
+        ip_address: "{{ hostvars['ansibleJenkinsVM']['host_static_ip'] }}"
+
+## 14. Adding ansible host dynamically to inventory..
+- hosts: localhost
+  tasks:
+    - name: Adding ansible host dynamically to inventory..
+      import_tasks: dynamically_add_host.yml
+      vars:
+        name_set: jenkinsVMM
+        ansible_user_set: root
+        ansible_host_set: "{{ hostvars['ansibleJenkinsVM']['host_static_ip'] }}"
+        groups_list: ProxmoxInternalRouter
+
+## 15. setting up jenkins VM
+- import_playbook: set_up_jenkins.yml
+
+## 16. Add route
+- hosts: jenkinsVMM
+  tasks:
+    - name: Add route
+      import_tasks: add_single_host_to_single_host_route.yml
+      vars:
+        from_host: "{{ proxmox_node_internal_ip }}"
+        via_hop_host: "{{ internal_ip_address }}"
+
+## 17. Add route
+- hosts: proxmoxNodeInternalRouter
+  tasks:
+    - name: Add route
+      import_tasks: add_single_host_to_single_host_route.yml
+      vars:
+        from_host: "{{ hostvars['ansibleJenkinsVM']['host_static_ip'] }}"
+        via_hop_host: "{{ external_ip_address }}"
+
+
+
+
+
+
+## (optional) 17. Store details/logs in Database/File:
+#
+
+## (optional) 18. Send email with all details to customer
+# Necessary vars: email, name
+#
+
+

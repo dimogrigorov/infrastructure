@@ -1,0 +1,12 @@
+sysname: rabbitMQRouter
+initial_ip_address: 10.69.181.31
+external_ip_address: 10.69.181.3
+external_subnetmask: 255.255.252.0
+default_gateway: 10.69.180.1
+internal_ip_address: 10.69.181.65
+dhcp_pool_name: RabbitMQPool
+dhcp_network: 10.69.181.64
+dns_by_dhcp: 10.69.177.253
+username: hp 
+password: hp123
+force_stop: True

@@ -1,0 +1,12 @@
+sysname: ArcticTestnetRouter
+initial_ip_address: 10.69.181.31
+external_ip_address: 10.69.181.5
+external_subnetmask: 255.255.252.0
+default_gateway: 10.69.180.1
+internal_ip_address: 10.69.182.113
+dhcp_pool_name: ArcticTestnetPool
+dhcp_network: 10.69.182.112
+dns_by_dhcp: 10.69.177.253
+username: hp 
+password: hp123
+force_stop: True

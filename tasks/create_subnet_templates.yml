@@ -1,0 +1,30 @@
+- name: Checking if VM-id "{{ vmid }}" is a template or regular virtual machine..
+  lineinfile:
+    path: /etc/pve/nodes/{{ proxmox_node_name }}/qemu-server/{{ vmid }}.conf
+    line: "template: 1"
+  check_mode: yes
+  no_log: True
+  register: contents_would_have
+  failed_when: false
+- name: Check the VM with VM-id "{{ vmid }}" current state..
+  shell:
+    pvesh get /nodes/{{ proxmox_node_name }}/qemu/{{ vmid }}/status/current
+  register: results
+  #  no_log: true
+  when: contents_would_have.changed == true
+- name: Changing the machine with VM-id "{{ vmid }}" vmbridge to the unique one given in the inventory for this subnet( "{{ vm_bridge }}" )..
+  replace:
+    path: /etc/pve/nodes/{{ proxmox_node_name }}/qemu-server/{{ vmid }}.conf
+    regexp: 'vmbr14'
+    replace: "{{ vm_bridge }}"
+    backup: yes
+  when: (contents_would_have.changed == true and (results.stdout | from_json).status == "stopped")
+- name: Converting VM with VM-id "{{ vmid }}" to a template..
+  shell: |
+    pvesh create /nodes/{{ proxmox_node_name }}/qemu/{{ vmid }}/template
+    qm unlock {{ vmid }}
+  when: (contents_would_have.changed == true and (results.stdout | from_json).status == "stopped")
+- name: Deleting the created machine with VM-id "{{ vmid }}" to a template..
+  shell:
+    pvesh get /nodes/{{ proxmox_node_name }}/qemu/{{ vmid }}/status/absent  
+  when: keepTemplateAfterVMIsCreated == false

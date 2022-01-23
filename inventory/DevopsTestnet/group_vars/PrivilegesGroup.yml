@@ -1,0 +1,14 @@
+groupId: Test-Users
+roleId: PVE_Test_Role
+storageList: [QNAP-Storage, HDD-Storage]
+vmidList: [1006, 14000, 10002, 10005]
+privilegesList: "Datastore.Allocate Datastore.AllocateSpace
+Datastore.AllocateTemplate Datastore.Audit Group.Allocate
+Permissions.Modify Pool.Allocate Realm.Allocate Realm.AllocateUser
+Sys.Audit Sys.Syslog User.Modify VM.Allocate VM.Audit VM.Backup
+VM.Clone VM.Config.CDROM VM.Config.CPU VM.Config.Disk
+VM.Config.HWType VM.Config.Memory VM.Config.Options
+VM.Console VM.Monitor VM.PowerMgmt VM.Snapshot"
+vmidRangeWillBeUsed: True
+groupWillBeCreated: True
+roleWillBeCreated: True

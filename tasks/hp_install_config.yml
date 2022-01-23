@@ -1,0 +1,10 @@
+- name: Applying configuration. This is going to be the Perimeter Router new running config..
+  comware_install_config:
+    config_file='files/template.cfg'
+    commit_changes=true
+    username={{ username }}
+    password={{ password }}
+    hostname={{ ip_address }}
+  no_log: True
+  failed_when: false
+  async: 10

@@ -1,0 +1,13 @@
+---
+- hosts: "{{ host }}"
+  tasks:
+    - name: include vault variables(proxmox cluster password)
+      include_vars: '../vars/vault.yml'
+      no_log: true
+    - name: Scanning VM-id range ["{{ fromVmid }}" - "{{ toVmid }}"] for exising machines. Gathering and appending static Network-Address(Mac address)/IP entries to the DHCP section of the Perimeter router configuration file..
+      script: get_vmid_and_mac_for_vmid_range.sh -s {{ api_host }} -p {{ proxmox_password }} -f {{ fromVmid }} -t {{ toVmid | int + 1 }} -m {{ internal_subnetmask }} -i {{ inventory_dir }} -d {{ playbook_dir }} -j {{ is_this_jenkins_machine }}
+      # no_log: true
+    - name: Delete leftover files
+      file:
+        path: /tmp/proxvm-*.json
+        state: absent
